@@ -1,4 +1,4 @@
-// Ruta: /proye-back/src/index.js (Versión Final con CORS funcional en Railway)
+// ✅ Ruta: /src/index.js (Versión corregida para Railway y CORS)
 
 require('dotenv').config();
 const express = require('express');
@@ -13,34 +13,29 @@ const reportRoutes = require('./routes/reportRoutes');
 
 const app = express();
 
-
-// --- CONFIGURACIÓN DE CORS CONTROLADA Y FUNCIONAL ---
+// --- CONFIGURACIÓN DE CORS ---
 const allowedOrigins = [
-  'https://proye-front-production2.up.railway.app', // 🌐 Frontend desplegado
-  'http://localhost:5173' // 💻 Desarrollo local (Vite)
+  'https://proye-front-production2.up.railway.app',
+  'http://localhost:3000'
 ];
 
 app.use(cors({
-  origin: function (origin, callback) {
-    // Permitir solicitudes sin origen (por ejemplo, desde curl o Postman)
-    if (!origin) return callback(null, true);
-
-    if (allowedOrigins.includes(origin)) {
-      console.log('✅ CORS permitido para:', origin);
-      return callback(null, true);
+  origin: (origin, callback) => {
+    // Si la petición no tiene origen (como Postman) o viene de uno permitido
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      console.warn(`❌ CORS bloqueado para origen: ${origin}`);
+      callback(new Error('Not allowed by CORS'));
     }
-
-    console.log('🚫 Bloqueado por CORS:', origin);
-    return callback(new Error('CORS no permitido para este origen: ' + origin));
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-// Manejo de preflight requests (requerido para Chrome)
+// --- MANEJO EXPLÍCITO DE OPTIONS (Preflight) ---
 app.options('*', cors());
-
 
 // --- MIDDLEWARES GLOBALES ---
 app.use(express.json());
@@ -49,10 +44,6 @@ app.use(express.urlencoded({ extended: true }));
 // --- RUTAS DE LA API ---
 app.get('/api/health', (req, res) => {
   res.status(200).json({ status: 'OK', message: 'SkyNet API is running' });
-});
-
-app.get('/api', (req, res) => {
-  res.json({ message: 'API de SkyNet está funcionando correctamente.' });
 });
 
 app.use('/api/auth', authRoutes);
@@ -71,7 +62,8 @@ app.use((req, res) => {
 });
 
 // --- ARRANQUE DEL SERVIDOR ---
-const PORT = Number(process.env.PORT) || 3000;
-app.listen(PORT, "0.0.0.0", () => {
-  console.log(`🚀 Servidor corriendo en el puerto ${PORT}`);
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`✅ Servidor corriendo en el puerto ${PORT}`);
+  console.log(`🌍 CORS permitido para: ${allowedOrigins.join(', ')}`);
 });
