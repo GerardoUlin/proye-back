@@ -14,7 +14,7 @@ const dbConfig = {
 };
 
 // Si estamos en producción, añadimos la configuración de SSL.
-if (process.env.NODE_ENV === 'production') {
+if (process.env.NODE_ENV === 'production2') {
     dbConfig.ssl = {
         rejectUnauthorized: false
     };
