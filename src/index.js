@@ -1,4 +1,4 @@
-// Ruta: /skynet-back/src/index.js (Versión Final Completa)
+// Ruta: /proye-back/src/index.js (Versión Final con CORS funcional en Railway)
 
 require('dotenv').config();
 const express = require('express');
@@ -14,16 +14,32 @@ const reportRoutes = require('./routes/reportRoutes');
 const app = express();
 
 
-// --- CONFIGURACIÓN DE CORS TOTALMENTE PERMISIVA ---
-// Acepta peticiones desde CUALQUIER origen, incluso con credenciales.
+// --- CONFIGURACIÓN DE CORS CONTROLADA Y FUNCIONAL ---
+const allowedOrigins = [
+  'https://proye-front-production2.up.railway.app', // 🌐 Frontend desplegado
+  'http://localhost:5173' // 💻 Desarrollo local (Vite)
+];
+
 app.use(cors({
-  origin: (origin, callback) => {
-    callback(null, true);
+  origin: function (origin, callback) {
+    // Permitir solicitudes sin origen (por ejemplo, desde curl o Postman)
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.includes(origin)) {
+      console.log('✅ CORS permitido para:', origin);
+      return callback(null, true);
+    }
+
+    console.log('🚫 Bloqueado por CORS:', origin);
+    return callback(new Error('CORS no permitido para este origen: ' + origin));
   },
   credentials: true,
-  methods: 'GET, POST, PUT, DELETE, OPTIONS',
-  allowedHeaders: 'Content-Type, Authorization'
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
+
+// Manejo de preflight requests (requerido para Chrome)
+app.options('*', cors());
 
 
 // --- MIDDLEWARES GLOBALES ---
@@ -55,6 +71,7 @@ app.use((req, res) => {
 });
 
 // --- ARRANQUE DEL SERVIDOR ---
-app.listen(Number(process.env.PORT) || 3000, "0.0.0.0", () => {
-  console.log("Flashcardly server is now running!")
-})
+const PORT = Number(process.env.PORT) || 3000;
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`🚀 Servidor corriendo en el puerto ${PORT}`);
+});
